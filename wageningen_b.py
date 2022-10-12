@@ -3,13 +3,20 @@
 """
 Created on Wed Jun  2 12:47:06 2021
 
-@author: oleve
+@author: Ole Vermeer en Dorus Boogaard
 """
 
 import numpy as np
 import math
+import matplotlib.pyplot as plt
+import parameters as p
 
-def wageningenb(j, pd, ae, z):
+def wageningenB(para, grad): 
+    n, pd, ae, z = para
+    va = p.ship["parameters"]["speed_of_advance"]
+    d = p.ship["parameters"]["propellor_diameter"]
+    j = va / (n * d)
+
     kt_terms = np.array(
         [[0.00880496000000000, -0.204554000000000, 0.166351000000000, 0.158114000000000, -0.147581000000000,
           -0.481497000000000, 0.415437000000000, 0.0144043000000000, -0.0530054000000000,
@@ -61,7 +68,7 @@ def wageningenb(j, pd, ae, z):
          [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
           2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]])
     
-    
+    #if grad > 0:
     
     kt_empty = []
     kt_empty.clear()
@@ -73,7 +80,7 @@ def wageningenb(j, pd, ae, z):
     for i in range(len(c)):
         T = c[i] * j ** s[i] * pd ** t[i] * ae ** u[i] * z ** v[i]
         kt_empty.append(T)
-    m = sum(kt_empty)
+    Kt = sum(kt_empty)
     kq_empty = []
     kq_empty.clear()
     c = kq_terms[0]
@@ -84,7 +91,7 @@ def wageningenb(j, pd, ae, z):
     for i in range(len(c)):
         Q = c[i] * j ** s[i] * pd ** t[i] * ae ** u[i] * z ** v[i]
         kq_empty.append(Q)
-    q = sum(kq_empty)
+    Kq = sum(kq_empty)
     Rn = 2*pow(10, 6) * ae * (1 / z) 
     if Rn >= 2 * pow(10, 6):
         """
@@ -114,7 +121,7 @@ def wageningenb(j, pd, ae, z):
         -0.0000276305*lR2*Z1*A1*J2
         +0.0000954*lR1*Z1*P1*J1
         +0.0000032049*lR1*Z2*A1*P3*J1
-        
+    
         DKQ = -0.000591412
         +0.00696898*P1
         -0.0000666654*Z1*P6
@@ -131,43 +138,58 @@ def wageningenb(j, pd, ae, z):
     else:
         DKT = 0
         DKQ = 0
-        
-    Kt = m + DKT
-    Kq = q + DKQ
+    
+    Kt += DKT
+    Kq += DKQ
     if j != 0:
         eta_o = j / (2 * math.pi) * Kt / Kq
     else:
         eta_o = 0
-    return Kt, Kq, eta_o
+    # kt, kq left out for optimalisation of eta_o
+    return eta_o
 
-def main():
-    print(wageningenb(1, 1, 0.3, 4))
-    kt_terms = np.array(
-    [[0.00880496000000000, -0.204554000000000, 0.166351000000000, 0.158114000000000, -0.147581000000000,
-      -0.481497000000000, 0.415437000000000, 0.0144043000000000, -0.0530054000000000,
-      0.0143481000000000,
-      0.0606826000000000, -0.0125894000000000, 0.0109689000000000, -0.133698000000000,
-      0.00638407000000000, -0.00132718000000000, 0.168496000000000, -0.0507214000000000,
-      0.0854559000000000, -0.0504475000000000,
-      0.0104650000000000, -0.00648272000000000, -0.00841728000000000, 0.0168424000000000,
-      -0.00102296000000000, -0.0317791000000000, 0.0186040000000000, -0.00410798000000000,
-      -0.000606848000000000, -0.00498190000000000, 0.00259830000000000, -0.000560528000000000,
-      -0.00163652000000000, -0.000328787000000000, 0.000116502000000000,
-      0.000690904000000000, 0.00421749000000000, 5.65229000000000e-05, -0.00146564000000000],
-     [0, 1, 0, 0, 2, 1, 0, 0, 2, 0, 1, 0, 1, 0, 0, 2, 3, 0, 2, 3, 1, 2, 0, 1, 3, 0, 1, 0, 0, 1, 2, 3, 1,
-      1, 2,
-      0, 0, 3, 0],
-     [0, 0, 1, 2, 0, 1, 2, 0, 0, 1, 1, 0, 0, 3, 6, 6, 0, 0, 0, 0, 6, 6, 3, 3, 3, 3, 0, 2, 0, 0, 0, 0, 2,
-      6, 6,
-      0, 3, 6, 3],
-     [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 2, 2, 2, 2, 2, 0, 0, 0, 1, 2, 2, 0, 0, 0, 0, 0,
-      0, 0,
-      1, 1, 1, 2],
-     [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2,
-      2, 2,
-      2, 2, 2, 2]])
-    
-    print(kt_terms)
-    
-if __name__ == '__main__':
-    main()
+def lijnenplot(ae,z):
+    Kt = []
+    Kq = []
+    Eta_o = []
+    Jt = []
+    Jq = []
+    Je = []
+    start = 0.4   # First P/D value
+    stop = 1.6    # last + 1 P/D value
+    plt.figure(figsize =(10,5),dpi = 100)
+    for pd in np.arange(start, stop, 0.1):
+        for j in np.arange(0, 1.7, 0.001):
+            kt, kq, eta_o = wageningenB(j,pd,ae,z)
+            kq *= 10
+            if kt > 0:
+                Jt.append(j)    
+                Kt.append(kt)
+            if kq > 0 :
+                Jq.append(j)    
+                Kq.append(kq)
+            if 0 < eta_o < 1:
+                Eta_o.append(eta_o)
+                Je.append(j)
+        plt.plot(Jt,Kt,color = "red",label = "Kt")
+        plt.plot(Jq,Kq, color = "black", label = "Kq")
+        plt.plot(Je,Eta_o, color = "green", label = "Eta_o")
+        Kt.clear()
+        Kq.clear()
+        Eta_o.clear()
+        Jt.clear()
+        Jq.clear()
+        Je.clear()
+    plt.ylabel("Kt, 10Kq, Eta_o")
+    plt.xlabel("J [-]")
+    plt.suptitle(f"P/D from {start} to {(stop - 0.1)}")
+    plt.title("Diagram of B" + str(z) + "-" + str(ae))
+    plt.grid()
+    plt.show()
+    plt.clf() 
+    Kt.clear()
+    Kq.clear()
+    Eta_o.clear()
+    Jt.clear()
+    Jq.clear()
+    Je.clear()
