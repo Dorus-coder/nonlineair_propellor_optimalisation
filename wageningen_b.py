@@ -3,14 +3,34 @@
 """
 Created on Wed Jun  2 12:47:06 2021
 
+
 @author: Ole Vermeer and Dorus Boogaard
+
+@author: Ole Vermeer en Dorus Boogaard
+
 """
 
 from matplotlib import pyplot as plt
 import numpy as np
 import math
+import parameters as p
 
-def wageningenB(j, pd, ae, z):
+
+def wageningenB(para, grad):
+    n, pd, ae, z = para   
+    va = p.ship["parameters"]["speed_of_advance"]
+    d = p.ship["parameters"]["propellor_diameter"]
+    j = va / (n * d)
+    if grad:
+        """
+        Compute the partial derivates of the objective function.
+        This is only needed for gradient based algorithms.
+        """
+        grad[0] = 0
+        grad[1] = 0
+
+        
+        
     kt_terms = np.array(
         [[0.00880496000000000, -0.204554000000000, 0.166351000000000, 0.158114000000000, -0.147581000000000,
           -0.481497000000000, 0.415437000000000, 0.0144043000000000, -0.0530054000000000,
@@ -62,8 +82,6 @@ def wageningenB(j, pd, ae, z):
          [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1,
           2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]])
     
-    
-    
     kt_empty = []
     kt_empty.clear()
     c = kt_terms[0]
@@ -73,7 +91,11 @@ def wageningenB(j, pd, ae, z):
     v = kt_terms[4]
     for i in range(len(c)):
         T = c[i] * j ** s[i] * pd ** t[i] * ae ** u[i] * z ** v[i]
+
         if T > 0: kt_empty.append(T)
+
+        kt_empty.append(T)
+
     Kt = sum(kt_empty)
     kq_empty = []
     kq_empty.clear()
@@ -84,7 +106,11 @@ def wageningenB(j, pd, ae, z):
     v = kq_terms[4]
     for i in range(len(c)):
         Q = c[i] * j ** s[i] * pd ** t[i] * ae ** u[i] * z ** v[i]
+
         if Q > 0: kq_empty.append(Q)
+
+        kq_empty.append(Q)
+
     Kq = sum(kq_empty)
     Rn = 2*pow(10, 6) * ae * (1 / z) 
     if Rn >= 2 * pow(10, 6):
@@ -115,7 +141,7 @@ def wageningenB(j, pd, ae, z):
         -0.0000276305*lR2*Z1*A1*J2
         +0.0000954*lR1*Z1*P1*J1
         +0.0000032049*lR1*Z2*A1*P3*J1
-        
+    
         DKQ = -0.000591412
         +0.00696898*P1
         -0.0000666654*Z1*P6
@@ -132,14 +158,20 @@ def wageningenB(j, pd, ae, z):
     else:
         DKT = 0
         DKQ = 0
+
         
+
+    
+
     Kt += DKT
     Kq += DKQ
     if j != 0:
         eta_o = j / (2 * math.pi) * Kt / Kq
     else:
         eta_o = 0
-    return Kt, Kq, eta_o
+    # kt, kq left out for optimalisation of eta_o
+    return eta_o
+
 
 
 def aufmKeller(z, T, D, rho=1025, g=9.81, k=0.15, patm=1*10**5, pv=1706):
@@ -158,6 +190,8 @@ def aufmKeller(z, T, D, rho=1025, g=9.81, k=0.15, patm=1*10**5, pv=1706):
     
 
 
+
+
 def lijnenplot(ae,z):
     Kt = []
     Kq = []
@@ -170,8 +204,17 @@ def lijnenplot(ae,z):
     plt.figure(figsize =(10,5),dpi = 100)
     for pd in np.arange(start, stop, 0.1):
         for j in np.arange(0, 1.7, 0.001):
-            kt,kq,eta_o = wageningenb(j,pd,ae,z)
+            kt,kq,eta_o = wageningenB(j,pd,ae,z)
             kq = kq *10 
+
+    start = 0.4   # First P/D value
+    stop = 1.6    # last + 1 P/D value
+    plt.figure(figsize =(10,5),dpi = 100)
+    for pd in np.arange(start, stop, 0.1):
+        for j in np.arange(0, 1.7, 0.001):
+            kt, kq, eta_o = wageningenB(j,pd,ae,z)
+            kq *= 10
+
             if kt > 0:
                 Jt.append(j)    
                 Kt.append(kt)
@@ -192,7 +235,11 @@ def lijnenplot(ae,z):
         Je.clear()
     plt.ylabel("Kt, 10Kq, Eta_o")
     plt.xlabel("J [-]")
+
     plt.suptitle(f"P/D from {start/10} to {(stop-1)/10}")
+
+    plt.suptitle(f"P/D from {start} to {(stop - 0.1)}")
+
     plt.title("Diagram of B" + str(z) + "-" + str(ae))
     plt.grid()
     plt.show()
@@ -202,5 +249,9 @@ def lijnenplot(ae,z):
     Eta_o.clear()
     Jt.clear()
     Jq.clear()
+
+    Je.clear()
+
+
     Je.clear()
 
