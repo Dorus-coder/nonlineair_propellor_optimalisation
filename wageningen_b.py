@@ -3,13 +3,14 @@
 """
 Created on Wed Jun  2 12:47:06 2021
 
-@author: oleve
+@author: Ole Vermeer and Dorus Boogaard
 """
 
+from matplotlib import pyplot as plt
 import numpy as np
 import math
 
-def wageningenb(j, pd, ae, z):
+def wageningenB(j, pd, ae, z):
     kt_terms = np.array(
         [[0.00880496000000000, -0.204554000000000, 0.166351000000000, 0.158114000000000, -0.147581000000000,
           -0.481497000000000, 0.415437000000000, 0.0144043000000000, -0.0530054000000000,
@@ -72,8 +73,8 @@ def wageningenb(j, pd, ae, z):
     v = kt_terms[4]
     for i in range(len(c)):
         T = c[i] * j ** s[i] * pd ** t[i] * ae ** u[i] * z ** v[i]
-        kt_empty.append(T)
-    m = sum(kt_empty)
+        if T > 0: kt_empty.append(T)
+    Kt = sum(kt_empty)
     kq_empty = []
     kq_empty.clear()
     c = kq_terms[0]
@@ -83,8 +84,8 @@ def wageningenb(j, pd, ae, z):
     v = kq_terms[4]
     for i in range(len(c)):
         Q = c[i] * j ** s[i] * pd ** t[i] * ae ** u[i] * z ** v[i]
-        kq_empty.append(Q)
-    q = sum(kq_empty)
+        if Q > 0: kq_empty.append(Q)
+    Kq = sum(kq_empty)
     Rn = 2*pow(10, 6) * ae * (1 / z) 
     if Rn >= 2 * pow(10, 6):
         """
@@ -132,42 +133,74 @@ def wageningenb(j, pd, ae, z):
         DKT = 0
         DKQ = 0
         
-    Kt = m + DKT
-    Kq = q + DKQ
+    Kt += DKT
+    Kq += DKQ
     if j != 0:
         eta_o = j / (2 * math.pi) * Kt / Kq
     else:
         eta_o = 0
     return Kt, Kq, eta_o
 
-def main():
-    print(wageningenb(1, 1, 0.3, 4))
-    kt_terms = np.array(
-    [[0.00880496000000000, -0.204554000000000, 0.166351000000000, 0.158114000000000, -0.147581000000000,
-      -0.481497000000000, 0.415437000000000, 0.0144043000000000, -0.0530054000000000,
-      0.0143481000000000,
-      0.0606826000000000, -0.0125894000000000, 0.0109689000000000, -0.133698000000000,
-      0.00638407000000000, -0.00132718000000000, 0.168496000000000, -0.0507214000000000,
-      0.0854559000000000, -0.0504475000000000,
-      0.0104650000000000, -0.00648272000000000, -0.00841728000000000, 0.0168424000000000,
-      -0.00102296000000000, -0.0317791000000000, 0.0186040000000000, -0.00410798000000000,
-      -0.000606848000000000, -0.00498190000000000, 0.00259830000000000, -0.000560528000000000,
-      -0.00163652000000000, -0.000328787000000000, 0.000116502000000000,
-      0.000690904000000000, 0.00421749000000000, 5.65229000000000e-05, -0.00146564000000000],
-     [0, 1, 0, 0, 2, 1, 0, 0, 2, 0, 1, 0, 1, 0, 0, 2, 3, 0, 2, 3, 1, 2, 0, 1, 3, 0, 1, 0, 0, 1, 2, 3, 1,
-      1, 2,
-      0, 0, 3, 0],
-     [0, 0, 1, 2, 0, 1, 2, 0, 0, 1, 1, 0, 0, 3, 6, 6, 0, 0, 0, 0, 6, 6, 3, 3, 3, 3, 0, 2, 0, 0, 0, 0, 2,
-      6, 6,
-      0, 3, 6, 3],
-     [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 2, 2, 2, 2, 2, 0, 0, 0, 1, 2, 2, 0, 0, 0, 0, 0,
-      0, 0,
-      1, 1, 1, 2],
-     [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2,
-      2, 2,
-      2, 2, 2, 2]])
+
+def aufmKeller(z, T, D, rho=1025, g=9.81, k=0.15, patm=1*10**5, pv=1706):
+    """
+    z  = number of blades
+    T  = thrust
+    D  = propellor diameter
+    k = 0.15 for E.S.S propellors from CuNiAl
+    rho = 1025 kg/m**3  density of the water
+    patm = 1*10**5 Pa   atmosferic pressure
+    pv = 1706 Pa vapour pressure @ 15 degrees celcius
     
-    print(kt_terms)
+    returns the minimum expanded area ratio of a propellor to be free of cavitation. 
+    """
+    return (1.3 + 0.3 * z) * T / ((p - pv) * D ** 2) + k
     
-if __name__ == '__main__':
-    main()
+
+
+def lijnenplot(ae,z):
+    Kt = []
+    Kq = []
+    Eta_o = []
+    Jt = []
+    Jq = []
+    Je = []
+    start = 0.4
+    stop = 1.5
+    plt.figure(figsize =(10,5),dpi = 100)
+    for pd in np.arange(start, stop, 0.1):
+        for j in np.arange(0, 1.7, 0.001):
+            kt,kq,eta_o = wageningenb(j,pd,ae,z)
+            kq = kq *10 
+            if kt > 0:
+                Jt.append(j)    
+                Kt.append(kt)
+            if kq > 0 :
+                Jq.append(j)    
+                Kq.append(kq)
+            if 0 < eta_o < 1:
+                Eta_o.append(eta_o)
+                Je.append(j)
+        plt.plot(Jt,Kt,color = "red",label = "Kt")
+        plt.plot(Jq,Kq, color = "black", label = "Kq")
+        plt.plot(Je,Eta_o, color = "green", label = "Eta_o")
+        Kt.clear()
+        Kq.clear()
+        Eta_o.clear()
+        Jt.clear()
+        Jq.clear()
+        Je.clear()
+    plt.ylabel("Kt, 10Kq, Eta_o")
+    plt.xlabel("J [-]")
+    plt.suptitle(f"P/D from {start/10} to {(stop-1)/10}")
+    plt.title("Diagram of B" + str(z) + "-" + str(ae))
+    plt.grid()
+    plt.show()
+    plt.clf() 
+    Kt.clear()
+    Kq.clear()
+    Eta_o.clear()
+    Jt.clear()
+    Jq.clear()
+    Je.clear()
+
