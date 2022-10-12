@@ -26,6 +26,8 @@ def constraint1():
     """
     pass
 
+
+
 def constraint2():
     """
     Make a functions that contrains on EAR
@@ -36,6 +38,8 @@ def constraint2():
 
     """
     pass
+
+
 
 def constraint3():
     """
