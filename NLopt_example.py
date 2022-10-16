@@ -4,6 +4,7 @@ Created on Wed Oct 12 14:04:14 2022
 
 @author: dorus
 Example from https://nlopt.readthedocs.io/en/latest/NLopt_Tutorial/#example-in-python
+https://stackoverflow.com/questions/55113568/how-to-set-up-nlopt-with-multiple-inequality-constraints
 """
 
 import nlopt

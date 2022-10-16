@@ -1,44 +1,36 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Oct  6 20:51:42 2022
+Created on Sat Oct 15 16:08:45 2022
 
 @author: dorus
+
+This module prints the properties of the propellor.
+J and P/D have a manual input!
+
 """
-from mpl_toolkits import mplot3d
-import matplotlib.pyplot as plt
-import wageningen_b as wb
 import numpy as np
-
-def thrust(R, t):
-    """
-    R = total resistance
-    t = thrust deduction factor
-    returns the required thrust to overcome a certain resistance
-    """
-    return R / (1 - t)
-
-# blz 99
-
-h = 4.725  # height of centerline proppellor to waterline
-
-pd = 0.8   # pitch /diameter
-ae = 0.6 
-z = 3
+from WageningenB import WageningenB_opt, J
+from parameters import ship
 
 
-incr = 0.01
-J = np.arange(0, 1.8, incr, dtype=float)
-xline = np.full_like(J, 1)
-yline = np.full_like(J, 1)
-zline = np.full_like(J, 1)
 
+    
+n_ = J(3.5, 5.4, 1.24)
+j = 1.24
+pd = 1.4
+K_t, K_q, eta_O = WageningenB_opt([j, pd])[0], WageningenB_opt([1.24, 1.4])[1], WageningenB_opt([1.24, 1.4])[2]
 
-L = []
-for i in range(len(xline)):
-    j = i * incr
-    xline[i], yline[i], zline[i] = wb.wageningenB(j, pd, ae, z)
+print(f"K_t: {round(K_t, 2)}")
+print(f"K_q: {round(K_q, 2)}")
+print(f"eta_O: {round(eta_O, 2)}")
+print("for parameters: ")
+print(f"EAR:  {ship['parameter']['expanded_area_ratio']}")
+print(f"number of blades: {ship['parameter']['number_of_blades']}")
+print(f"speed of advance: {j}")
+print(f"P/D: {pd}")
+print()
+print("n: " + str(round(n_.n(), 2)) + " rps")
+print("n: " + str(round(n_.n() * 60)) + " rpm")
+print("pitch: " + str(round(n_.pitch(1.4), 2)) + " m.")
 
-ax = plt.axes(projection='3d')
-ax.plot3D(xline, yline, zline, 'green')
-
-wb.lijnenplot(ae, z)
